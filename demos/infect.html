@@ -1,0 +1,80 @@
+<html>
+  <body style="margin: 0; background: black;">
+    <canvas id="canvas"></canvas>
+    <script src="../src/lib.js"></script>
+    <script src="../src/world.js"></script>
+    <script src="../src/shapes.js"></script>
+    <script src="../src/ReceiverDescriptor.js"></script>
+    <script src="../src/vcr.js"></script>
+    <script src="../src/ui.js"></script>
+    <script>
+
+'use strict';
+
+Circle.prototype.juiceUp = function() {
+  const origRadius = this.state.radius;
+  this.step = t => {
+    this.state.radius = origRadius * (1 + 0.05 * Math.sin(t / 60 * 2 * Math.PI));
+  };
+  return this;
+};
+
+Rectangle.prototype.juiceUp = function() {
+  const origWidth = this.state.width;
+  const origHeight = this.state.height;
+  this.step = t => {
+    this.state.width = origWidth * (1 + 0.05 * Math.sin(t / 60 * 2 * Math.PI));
+    this.state.height = origHeight * (1 + 0.05 * Math.cos(t / 60 * 2 * Math.PI));
+  };
+  return this;
+};
+
+Shape.prototype.infect = async function(direction) {
+  if (this.state.color !== 'red') {
+    this.state.color = 'red';
+    await this.to.direction(direction, 100).send('infect', direction);
+  }
+};
+
+world.addObject(new Circle(100, 100, 'blue', 25).juiceUp());
+world.addObject(new Circle(100, 200, 'green', 30).juiceUp());
+world.addObject(new Rectangle(200, 100, 'cornflowerblue', 80, 40).juiceUp());
+world.addObject(new Rectangle(200, 200, 'orange', 100, 35).juiceUp());
+
+let handlingSend = false;
+document.body.addEventListener('keydown', async e => {
+  if (handlingSend || !mouse.targetObj) {
+    return;
+  }
+  handlingSend = true;
+  const descriptor = new ReceiverDescriptor(mouse.targetObj);
+  const maxDistance = e.shiftKey ? undefined : 100;
+  try {
+    switch (e.code) {
+      case 'KeyW':
+        descriptor.up(maxDistance);
+        break;
+      case 'KeyX':
+        descriptor.down(maxDistance);
+        break;
+      case 'KeyA':
+        descriptor.left(maxDistance);
+        break;
+      case 'KeyD':
+        descriptor.right(maxDistance);
+        break;
+      case 'KeyS':
+        descriptor.nearby(maxDistance);
+        break;
+      default:
+        return;
+    }
+    await descriptor.send('infect', descriptor.direction);
+  } finally {
+    handlingSend = false;
+  }
+});
+
+    </script>
+  </body>
+</html>
