@@ -36,10 +36,12 @@ Shape.prototype.infect = async function(direction) {
   }
 };
 
-world.addObject(new Circle(100, 100, 'blue', 25).juiceUp());
-world.addObject(new Circle(100, 200, 'green', 30).juiceUp());
-world.addObject(new Rectangle(200, 100, 'cornflowerblue', 80, 40).juiceUp());
-world.addObject(new Rectangle(200, 200, 'orange', 100, 35).juiceUp());
+world.objects = [
+    new Circle(100, 100, 'blue', 25).juiceUp(),
+    new Circle(100, 200, 'green', 30).juiceUp(),
+    new Rectangle(200, 100, 'cornflowerblue', 80, 40).juiceUp(),
+    new Rectangle(200, 200, 'orange', 100, 35).juiceUp()
+];
 
 let handlingSend = false;
 document.body.addEventListener('keydown', async e => {
