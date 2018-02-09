@@ -112,15 +112,15 @@ function illuminateMessageAvoidingBeam(ctxt, beam) {
   const sender = beam.state.sender;
   const text = `${beam.state.selector}(${beam.state.args.map(stringify).join(', ')})`;
   ctxt.fillStyle = 'yellow';
-  if (!beam.containsPoint(sender.state.x, sender.topY - 20)) {
+  if (!beam.containsPoint(sender.state.x, sender.topY - 20)) {  // above
     fillTextCenteredWithShadow(ctxt, text, sender.state.x, sender.topY - 20);
-  } else if (!beam.containsPoint(sender.state.x, sender.bottomY + 20)) {
+  } else if (!beam.containsPoint(sender.state.x, sender.bottomY + 20)) {  // below
     fillTextCenteredWithShadow(ctxt, text, sender.state.x, sender.bottomY + 20);
-  } else if (!beam.containsPoint(sender.leftX - 20, sender.state.y)) {
+  } else if (!beam.containsPoint(sender.leftX - 20, sender.state.y)) {  // left
     fillTextRightAlignedWithShadow(ctxt, text, sender.leftX - 20, sender.state.y);
-  } else if (!beam.containsPoint(sender.rightX + 20, sender.state.y)) {
+  } else if (!beam.containsPoint(sender.rightX + 20, sender.state.y)) {  // right
     fillTextLeftAlignedWithShadow(ctxt, text, sender.rightX + 20, sender.state.y);
-  } else {
+  } else {  // center
     fillTextCenteredWithShadow(ctxt, text, sender.state.x, sender.state.y);
   }
 }
@@ -129,22 +129,17 @@ function illuminateResponseAvoidingBeam(ctxt, beam) {
   const receiver = beam.state.currentReceiver;
   const text = stringify(beam.state.currentResult);
   ctxt.fillStyle = 'white';
-  if (!beam.containsPoint(receiver.state.x, receiver.bottomY + 20)) {
+  if (!beam.containsPoint(receiver.state.x, receiver.bottomY + 20)) {  // below
     fillTextCenteredWithShadow(ctxt, text, receiver.state.x, receiver.bottomY + 20);
-  } else if (!beam.containsPoint(receiver.state.x, receiver.topY - 20)) {
+  } else if (!beam.containsPoint(receiver.state.x, receiver.topY - 20)) {  // above
     fillTextCenteredWithShadow(ctxt, text, receiver.state.x, receiver.topY - 20);
-  } else if (!beam.containsPoint(receiver.rightX + 20, receiver.state.y)) {
+  } else if (!beam.containsPoint(receiver.rightX + 20, receiver.state.y)) {  // right
     fillTextLeftAlignedWithShadow(ctxt, text, receiver.rightX + 20, receiver.state.y);
-  } else if (!beam.containsPoint(receiver.leftX - 20, receiver.state.y)) {
+  } else if (!beam.containsPoint(receiver.leftX - 20, receiver.state.y)) {  // left
     fillTextRightAlignedWithShadow(ctxt, text, receiver.leftX - 20, receiver.state.y);
-  } else {
+  } else {  // center
     fillTextCenteredWithShadow(ctxt, text, receiver.state.x, receiver.state.y);
   }
-  fillTextCenteredWithShadow(
-      ctxt,
-      stringify(beam.state.currentResult),
-      beam.state.currentReceiver.state.x,
-      beam.state.currentReceiver.bottomY + 20);
 }
 
 class Snapshot {
