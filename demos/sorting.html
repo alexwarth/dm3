@@ -1,0 +1,108 @@
+<html>
+  <body style="margin: 0; background: black;">
+    <canvas id="canvas"></canvas>
+    <script src="../src/lib.js"></script>
+    <script src="../src/world.js"></script>
+    <script src="../src/shapes.js"></script>
+    <script src="../src/ReceiverDescriptor.js"></script>
+    <script src="../src/vcr.js"></script>
+    <script src="../src/ui.js"></script>
+    <script>
+
+'use strict';
+
+class Status extends Rectangle {
+  constructor(x, y) {
+    super(0, 0, 'black', 0, 0);
+    this.state.msg = '???';
+  }
+
+  draw(ctxt) {
+    ctxt.font = '25pt Comic Sans MS';
+    ctxt.fillStyle = this.state.color;
+    const x = canvas.width / 2 - ctxt.measureText(this.state.msg).width / 2;
+    const y = 100;
+    ctxt.fillText(this.state.msg, x, y);
+  }
+
+  async step(t) {
+    const responses = await this.to.all(SentientRectangle).send('ping');
+    if (responses.every(({receiver, result}) => receiver.state.mood === 'happy')) {
+      this.state.msg = 'Yay, you did it!';
+      this.state.color = 'white';
+    } else {
+      this.state.msg = 'Can you sort the rectangles?';
+      this.state.color = 'yellow';
+    }
+  }
+}
+
+class SentientRectangle extends Rectangle {
+  constructor(x, y, w, h) {
+    super(x, y, 'black', w, h);
+    this.state.origWidth = this.state.width;
+    this.state.origHeight = this.state.height;
+    this.state.mood = 'sad';
+  }
+
+  async step(t) {
+    const responses = await this.to.all(SentientRectangle).left().send('ping');
+    if (responses.every(({receiver, result}) => receiver.state.height <= this.state.height)) {
+      this.state.mood = 'happy';
+    } else {
+      this.state.mood = 'sad';
+    }
+
+    this.state.width = this.state.origWidth * (1 + 0.01 * Math.sin(t / 60 * 2 * Math.PI));
+    this.state.height = this.state.origHeight * (1 + 0.01 * Math.cos(t / 60 * 2 * Math.PI));
+  }
+
+  draw(ctxt, options) {
+    if (this.state.mood === 'happy') {
+      this.state.color = 'cornflowerblue';
+      this.state.faceColor = 'black';
+    } else {
+      this.state.color = 'maroon';
+      this.state.faceColor = 'white';
+    }
+
+    super.draw(ctxt, options);
+
+    ctxt.fillStyle = ctxt.strokeStyle = this.state.faceColor;
+
+    ctxt.beginPath();
+    ctxt.arc(this.state.x - this.state.width / 4, this.state.y - 10, 3, 0, 2 * Math.PI);
+    ctxt.fill();
+
+    ctxt.beginPath();
+    ctxt.arc(this.state.x + this.state.width / 4, this.state.y - 10, 3, 0, 2 * Math.PI);
+    ctxt.fill();
+
+    ctxt.lineWidth = 2;
+    ctxt.beginPath();
+    ctxt.arc(
+        this.state.x,
+        this.state.mood === 'happy' ? this.state.y + 20 - this.state.width / 3 : this.state.y + 20,
+        this.state.width / 3,
+        this.state.mood === 'happy' ? 0 : Math.PI,
+        this.state.mood === 'happy' ? Math.PI : 0);
+    ctxt.stroke();
+    ctxt.lineWidth = 1;
+  }
+}
+
+const centerX = canvas.width / 2;
+
+world.objects = [
+  new Status(),
+  new SentientRectangle(centerX + 250, 300, 50, 50),
+  new SentientRectangle(centerX + 150, 300, 50, 75),
+  new SentientRectangle(centerX + 50, 300, 50, 100),
+  new SentientRectangle(centerX - 50, 300, 50, 125),
+  new SentientRectangle(centerX - 150, 300, 50, 150),
+  new SentientRectangle(centerX - 250, 300, 50, 175),
+];
+
+    </script>
+  </body>
+</html>

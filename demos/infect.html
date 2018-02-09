@@ -33,6 +33,7 @@ Shape.prototype.infect = async function(direction) {
   if (this.state.color !== 'red') {
     this.state.color = 'red';
     await this.to.direction(direction, 100).send('infect', direction);
+    return ':(';
   }
 };
 

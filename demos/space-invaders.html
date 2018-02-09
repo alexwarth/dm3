@@ -1,0 +1,101 @@
+<html>
+  <body style="margin: 0; background: black;">
+    <canvas id="canvas"></canvas>
+    <script src="../src/lib.js"></script>
+    <script src="../src/world.js"></script>
+    <script src="../src/shapes.js"></script>
+    <script src="../src/ReceiverDescriptor.js"></script>
+    <script src="../src/vcr.js"></script>
+    <script src="../src/ui.js"></script>
+    <script>
+
+'use strict';
+
+class HiveMind extends Circle {
+  constructor() {
+    super(-Infinity, -Infinity, 'black', 0);
+    this.state.vx = 1;
+  }
+
+  async step(t) {
+    if (t > 0 && t % 60 === 0) {
+      this.state.vx *= -1;
+    }
+  }
+}
+
+const hiveMind = world.addObject(new HiveMind());
+
+class Alien extends Rectangle {
+  constructor(x, y) {
+    super(x, y, '#efefef', 50, 50);
+  }
+
+  async step(t) {
+    this.state.x += hiveMind.state.vx;
+  }
+}
+
+class Bullet extends Rectangle {
+  constructor(x, y) {
+    super(x, y, 'yellow', 5, 10);
+    this.state.vy = -4;
+  }
+
+  async step(t) {
+    this.state.y += this.state.vy;
+    if (this.bottomY < 0) {
+      this.destroy();
+    }
+
+    const responses = await this.to.all(Alien).up(this.state.height / 2 + 10).send('ping');
+    const aliens = responses.map(response => response.receiver);
+    for (let alien of aliens) {
+      alien.destroy();
+    }
+    if (aliens.length > 0) {
+      this.destroy();
+    }
+  }
+}
+
+class Spaceship extends Rectangle {
+  constructor() {
+    super(canvas.width / 2, canvas.height - 55, 'cornflowerblue', 20, 50);
+  }
+
+  moveTo(x, y) {
+    super.moveTo(x, this.state.y);
+  }
+
+  async step(t) {
+    this.state.y = canvas.height - this.state.height;
+  }
+
+  fireBullet() {
+    world.addObject(
+        new Bullet(this.state.x, this.state.y - this.state.height / 2));
+  }
+}
+
+for (let row = 0; row < 3; row++) {
+  const xOffset = 50 + (row % 2 === 0 ? 0 : 50);
+  const y = row * 100 + 50;
+  for (let x = xOffset; x + 50 < canvas.width; x += 100) {
+    world.addObject(new Alien(x, y));
+  }
+}
+
+world.addObject(new Spaceship());
+
+document.body.addEventListener('keydown', e => {
+  if (e.key === 'Shift') {
+    world.objects.
+        filter(obj => obj instanceof Spaceship).
+        forEach(spaceship => spaceship.fireBullet());
+  }
+});
+
+    </script>
+  </body>
+</html>

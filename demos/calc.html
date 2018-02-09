@@ -1,0 +1,158 @@
+<html>
+  <body style="margin: 0; background: black;">
+    <canvas id="canvas"></canvas>
+    <script src="../src/lib.js"></script>
+    <script src="../src/world.js"></script>
+    <script src="../src/shapes.js"></script>
+    <script src="../src/ReceiverDescriptor.js"></script>
+    <script src="../src/vcr.js"></script>
+    <script src="../src/ui.js"></script>
+    <script>
+
+'use strict';
+
+class Num extends Circle {
+  constructor(x, y, value) {
+    super(x, y, 'cornflowerblue', 30);
+    this.state.value = value;
+  }
+
+  draw(ctxt, options) {
+    super.draw(ctxt, options);
+    ctxt.font = '12pt Monaco';
+    ctxt.fillStyle = 'yellow';
+    const text = '' + this.state.value;
+    const x = this.state.x - ctxt.measureText(text).width / 2;
+    const y = this.state.y + 6;
+    ctxt.fillText(text, x, y);
+  }
+}
+
+class Op extends Rectangle {
+  constructor(x, y, minArity, maxArity) {
+    super(x, y, 'indigo', 50, 50 * minArity);
+    this.state.minArity = minArity;
+    this.state.maxArity = maxArity || minArity;
+    this.state.operands = [];
+  }
+
+  saveState() {
+    const state = super.saveState();
+    state.operans = state.operands.slice();
+    return state;
+  }
+
+  get label() {
+    throw new Error('subclass responsibility');
+  }
+
+  eval(...args) {
+    throw new Error('subclass responsibility');
+  }
+
+  async step(t) {
+    this.state.value = undefined;
+    const responses = await this.to.left(200).upTo(this.state.maxArity).send('ping');
+    this.state.operands = responses.map(response => response.receiver);
+    if (this.state.operands.length >= this.state.minArity) {
+      const values = this.state.operands.map(operand => operand.state.value);
+      this.state.value = values.some(value => value === undefined) ?
+          undefined :
+          this.eval(...values);
+    }
+    this.state.height = Math.max(50 * this.state.minArity, this.state.operands.length * 50);
+  }
+
+  drawBottomLayer(ctxt, options) {
+    for (let operand of this.state.operands) {
+      ctxt.strokeStyle = 'yellow';
+      ctxt.moveTo(this.state.x, this.state.y);
+      ctxt.lineTo(operand.state.x, operand.state.y);
+      ctxt.stroke();
+    }
+  }
+
+  draw(ctxt, options) {
+    super.draw(ctxt, options);
+    ctxt.font = '12pt Monaco';
+    ctxt.fillStyle = 'yellow';
+    const text = this.label;
+    const x = this.state.x - ctxt.measureText(text).width / 2;
+    const y = this.state.y + 6;
+    ctxt.fillText(text, x, y);
+  }
+}
+
+class PassThrough extends Op {
+  constructor(x, y) {
+    super(x, y, 1);
+  }
+
+  eval(a) {
+    return a;
+  }
+
+  get label() {
+    return this.state.value === undefined ? '?' : this.state.value;
+  }
+}
+
+class MAdd extends Op {
+  constructor(x, y) {
+    super(x, y, 1, Infinity);
+  }
+
+  eval(...args) {
+    return args.reduce((a, b) => a + b, 0);
+  }
+
+  get label() {
+    return '++';
+  }
+}
+
+class Add extends Op {
+  constructor(x, y) {
+    super(x, y, 2);
+  }
+
+  eval(a, b) {
+    return a + b;
+  }
+
+  get label() {
+    return '+';
+  }
+}
+
+class Mul extends Op {
+  constructor(x, y) {
+    super(x, y, 2);
+  }
+
+  eval(a, b) {
+    return a * b;
+  }
+
+  get label() {
+    return '*';
+  }
+}
+
+world.objects = [
+  new Num(100, 100, 1),
+  new Num(200, 100, 5),
+  new Num(300, 100, 42),
+  new Num(100, 200, 7),
+  new Add(400, 200),
+  new Add(300, 450),
+  new Mul(100, 300),
+  new PassThrough(500, 300),
+  new PassThrough(525, 360),
+  new PassThrough(550, 450),
+  new MAdd(800, 300)
+];
+
+    </script>
+  </body>
+</html>
