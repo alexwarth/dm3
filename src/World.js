@@ -95,24 +95,56 @@ class World {
     ctxt.globalAlpha = Math.pow(textDampingFactor, this.beams.length - 1);
     ctxt.font = '12pt Avenir';
     for (let beam of this.beams) {
-      ctxt.fillStyle = 'yellow';
-      fillTextCenteredWithShadow(
-          ctxt,
-          `${beam.state.selector}(${beam.state.args.map(stringify).join(', ')})`,
-          beam.state.sender.state.x,
-          beam.state.sender.bottomY + 20);
+      illuminateMessageAvoidingBeam(ctxt, beam);
       if (beam.state.currentResult !== undefined) {
-        ctxt.fillStyle = 'white';
-        fillTextCenteredWithShadow(
-            ctxt,
-            stringify(beam.state.currentResult),
-            beam.state.currentReceiver.state.x,
-            beam.state.currentReceiver.topY - 20);
+        illuminateResponseAvoidingBeam(ctxt, beam);
       }
       ctxt.globalAlpha /= textDampingFactor;
     }
     ctxt.globalAlpha = 1;
   }
+}
+
+// TODO: place labels so that they don't overlap with their resp. beams, if possible
+// (not taking text measurements into account right now)
+
+function illuminateMessageAvoidingBeam(ctxt, beam) {
+  const sender = beam.state.sender;
+  const text = `${beam.state.selector}(${beam.state.args.map(stringify).join(', ')})`;
+  ctxt.fillStyle = 'yellow';
+  if (!beam.containsPoint(sender.state.x, sender.topY - 20)) {
+    fillTextCenteredWithShadow(ctxt, text, sender.state.x, sender.topY - 20);
+  } else if (!beam.containsPoint(sender.state.x, sender.bottomY + 20)) {
+    fillTextCenteredWithShadow(ctxt, text, sender.state.x, sender.bottomY + 20);
+  } else if (!beam.containsPoint(sender.leftX - 20, sender.state.y)) {
+    fillTextRightAlignedWithShadow(ctxt, text, sender.leftX - 20, sender.state.y);
+  } else if (!beam.containsPoint(sender.rightX + 20, sender.state.y)) {
+    fillTextLeftAlignedWithShadow(ctxt, text, sender.rightX + 20, sender.state.y);
+  } else {
+    fillTextCenteredWithShadow(ctxt, text, sender.state.x, sender.state.y);
+  }
+}
+
+function illuminateResponseAvoidingBeam(ctxt, beam) {
+  const receiver = beam.state.currentReceiver;
+  const text = stringify(beam.state.currentResult);
+  ctxt.fillStyle = 'white';
+  if (!beam.containsPoint(receiver.state.x, receiver.bottomY + 20)) {
+    fillTextCenteredWithShadow(ctxt, text, receiver.state.x, receiver.bottomY + 20);
+  } else if (!beam.containsPoint(receiver.state.x, receiver.topY - 20)) {
+    fillTextCenteredWithShadow(ctxt, text, receiver.state.x, receiver.topY - 20);
+  } else if (!beam.containsPoint(receiver.rightX + 20, receiver.state.y)) {
+    fillTextLeftAlignedWithShadow(ctxt, text, receiver.rightX + 20, receiver.state.y);
+  } else if (!beam.containsPoint(receiver.leftX - 20, receiver.state.y)) {
+    fillTextRightAlignedWithShadow(ctxt, text, receiver.leftX - 20, receiver.state.y);
+  } else {
+    fillTextCenteredWithShadow(ctxt, text, receiver.state.x, receiver.state.y);
+  }
+  fillTextCenteredWithShadow(
+      ctxt,
+      stringify(beam.state.currentResult),
+      beam.state.currentReceiver.state.x,
+      beam.state.currentReceiver.bottomY + 20);
 }
 
 class Snapshot {

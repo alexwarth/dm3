@@ -27,16 +27,16 @@ function fillTextCenteredWithShadow(ctxt, text, centerX, centerY, height = 12) {
   const width = ctxt.measureText(text).width;
   const leftX = centerX - width / 2;
   const bottomY = centerY + height / 2;
-  fillTextWithShadow(ctxt, text, leftX, bottomY);
+  fillTextLeftAlignedWithShadow(ctxt, text, leftX, bottomY);
 }
 
 function fillTextRightAlignedWithShadow(ctxt, text, rightX, bottomY) {
   const width = ctxt.measureText(text).width;
   const leftX = rightX - width;
-  fillTextWithShadow(ctxt, text, leftX, bottomY);
+  fillTextLeftAlignedWithShadow(ctxt, text, leftX, bottomY);
 }
 
-function fillTextWithShadow(ctxt, text, leftX, bottomY) {
+function fillTextLeftAlignedWithShadow(ctxt, text, leftX, bottomY) {
   const origFillStyle = ctxt.fillStyle;
   ctxt.fillStyle = 'black';
   ctxt.fillText(text, leftX + 2, bottomY + 2);
