@@ -31,8 +31,7 @@ class Shape {
   }
 
   moveTo(x, y) {
-    this.state.x = x;
-    this.state.y = y;
+    this.moveBy(x - this.state.x, y - this.state.y);
   }
 
   moveBy(dx, dy) {

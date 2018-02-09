@@ -1,0 +1,314 @@
+<html>
+  <body style="margin: 0; background: black;">
+    <canvas id="canvas"></canvas>
+    <script src="../src/lib.js"></script>
+    <script src="../src/world.js"></script>
+    <script src="../src/shapes.js"></script>
+    <script src="../src/ReceiverDescriptor.js"></script>
+    <script src="../src/vcr.js"></script>
+    <script src="../src/ui.js"></script>
+    <script>
+
+'use strict';
+
+class Val extends Circle {
+  constructor(x, y) {
+    super(x, y, 'cornflowerblue', 20);
+  }
+
+  draw(ctxt, options) {
+    super.draw(ctxt, options);
+    ctxt.font = '16px Avenir';
+    ctxt.fillStyle = 'yellow';
+    const text = '' + this.state.value;
+    const x = this.state.x - ctxt.measureText(text).width / 2;
+    const y = this.state.y + 5;
+    ctxt.fillText(text, x, y);
+  }
+
+  ready() {
+    return true;
+  }
+}
+
+class Num extends Val {
+  constructor(x, y, value) {
+    super(x, y);
+    this.state.value = value;
+  }
+}
+
+class RedVar extends Num {
+  constructor(x, y) {
+    super(x, y, 0);
+    this.state.color = 'maroon';
+  }
+
+  async increaseBy(n) {
+    this.state.value += n;
+  }
+}
+
+class Cmd extends Rectangle {
+  constructor(x, y, label) {
+    super(x, y, 'indigo', 50, 50);
+    this.state.label = label;
+    this.state.next = null;
+  }
+
+  moveBy(dx, dy) {
+    super.moveBy(dx, dy);
+    if (this.state.next !== null) {
+      this.state.next.moveBy(dx, dy);
+    }
+  }
+
+  async step(t) {
+    const responses = await this.to.one(Cmd).down(100).send('ping');
+    this.state.next = responses.length === 1 ? responses[0].receiver : null;
+  }
+
+  ready() {
+    return true;
+  }
+
+  async exec() {
+    if (this.ready()) {
+      await this.execInner();
+      await this.to.one(Cmd).down(100).send('exec');
+    }
+  }
+
+  async execInner() {
+    throw new Error('subclass responsibility');
+  }
+
+  drawBottomLayer(ctxt) {
+    if (this.state.next) {
+      ctxt.strokeStyle = 'yellow';
+      ctxt.moveTo(this.state.x, this.state.y);
+      ctxt.lineTo(this.state.next.state.x, this.state.next.state.y);
+      ctxt.stroke();
+    }
+  }
+
+  draw(ctxt, options) {
+    ctxt.font = '16px Avenir';
+    const labelWidth = ctxt.measureText(this.state.label).width;
+    this.state.width = labelWidth + 20;
+    super.draw(ctxt, options);
+    ctxt.fillStyle = 'white';
+    ctxt.fillText(this.state.label, this.state.x - labelWidth / 2, this.state.y + 5);
+  }
+}
+
+class Cmd1 extends Cmd {
+  constructor(x, y, label) {
+    super(x, y, label);
+    this.state.arg = null;
+  }
+
+  moveBy(dx, dy) {
+    super.moveBy(dx, dy);
+    if (this.state.arg !== null) {
+      this.state.arg.moveBy(dx, dy);
+    }
+  }
+
+  async step(t) {
+    super.step(t);
+    const responses = await this.to.one(Val).right(this.state.width / 2 + 100).send('ping');
+    this.state.arg = responses.length === 1 ? responses[0].receiver : null;
+    this.state.color = this.ready() ? 'indigo' : '#444';
+  }
+
+  ready() {
+    return this.state.arg !== null && this.state.arg.ready();
+  }
+
+  drawBottomLayer(ctxt) {
+    super.drawBottomLayer(ctxt);
+    if (this.state.arg !== null) {
+      ctxt.strokeStyle = 'white';
+      ctxt.moveTo(this.state.x, this.state.y);
+      ctxt.lineTo(this.state.arg.state.x, this.state.arg.state.y);
+      ctxt.stroke();
+    }
+  }
+}
+
+class FwdBy extends Cmd1 {
+  constructor(x, y) {
+    super(x, y, 'forward by');
+  }
+
+  async execInner() {
+    await this.to.all(Turtle).send('forwardBy', this.state.arg.state.value);
+  }
+}
+
+class TurnBy extends Cmd1 {
+  constructor(x, y) {
+    super(x, y, 'turn by');
+  }
+
+  async execInner() {
+    await this.to.all(Turtle).send('turnBy', this.state.arg.state.value);
+  }
+}
+
+class IncreaseRedBy extends Cmd1 {
+  constructor(x, y) {
+    super(x, y, 'increase red variable by');
+  }
+
+  async execInner() {
+    await this.to.all(RedVar).send('increaseBy', this.state.arg.state.value);
+  }
+}
+
+class Repeat extends Cmd {
+  constructor(x, y) {
+    super(x, y, 'repeat');
+  }
+
+  async step(t) {
+    await super.step(t);
+    if (t % 10 === 0) {
+      await this.exec();
+    }
+  }
+
+  async execInner() {
+    // no-op
+  }
+}
+
+class Turtle extends Circle {
+  constructor(x, y) {
+    super(x, y, 'black', 10);
+    this.state.path = [{x: x, y: y}];
+    this.state.heading = 270;
+  }
+
+  saveState() {
+    const state = super.saveState();
+    state.path = state.path.slice();
+    return state;
+  }
+
+  moveBy(dx, dy) {
+    if (this.state.path.length > 0 && this.state.path[this.state.path.length - 1] !== null) {
+      this.state.path.push(null);
+    }
+    super.moveBy(dx, dy);
+  }
+
+  drawBottomLayer(ctxt) {
+    // Trails
+    ctxt.strokeStyle = 'yellow';
+    let lastP = null;
+    for (let idx = 0; idx < this.state.path.length; idx++) {
+      const p = this.state.path[idx];
+      if (lastP === null) {
+        ctxt.beginPath();
+        ctxt.moveTo(p.x, p.y);
+      } else if (p === null) {
+        if (idx > 0) {
+          ctxt.stroke();
+        }
+      } else {
+        ctxt.lineTo(p.x, p.y);
+      }
+      lastP = p;
+    }
+    if (this.state.path.length > 0) {
+      ctxt.stroke();
+    }
+  }
+
+  draw(ctxt, options) {
+    // Turtle
+    ctxt.beginPath();
+    ctxt.fillStyle = 'white';
+    ctxt.moveTo(
+      this.state.x + 10 * Math.cos(this.state.heading / 180 * Math.PI),
+      this.state.y + 10 * Math.sin(this.state.heading / 180 * Math.PI));
+    ctxt.lineTo(
+      this.state.x + 10 * Math.cos((this.state.heading - 140) / 180 * Math.PI),
+      this.state.y + 10 * Math.sin((this.state.heading - 140) / 180 * Math.PI));
+    ctxt.lineTo(
+      this.state.x + 10 * Math.cos((this.state.heading + 140) / 180 * Math.PI),
+      this.state.y + 10 * Math.sin((this.state.heading + 140) / 180 * Math.PI));
+    ctxt.fill();
+  }
+
+  forwardBy(n) {
+    this.state.x += n * Math.cos(this.state.heading / 180 * Math.PI);
+    this.state.y += n * Math.sin(this.state.heading / 180 * Math.PI);
+    this.state.path.push({x: this.state.x, y: this.state.y});
+  }
+
+  turnBy(n) {
+    this.state.heading += n;
+  }
+}
+
+const turtle = new Turtle(canvas.width / 2, canvas.height / 2);
+
+world.objects = [
+  new Num(100, 100, 1),
+  new Num(100, 100, 1),
+  new Num(100, 100, 1),
+  new Num(100, 100, 1),
+
+  new Num(100, 200, 10),
+  new Num(100, 200, 10),
+  new Num(100, 200, 10),
+  new Num(100, 200, 10),
+
+  new Num(100, 300, 30),
+  new Num(100, 300, 30),
+  new Num(100, 300, 30),
+  new Num(100, 300, 30),
+
+  new Num(100, 400, 60),
+  new Num(100, 400, 60),
+  new Num(100, 400, 60),
+  new Num(100, 400, 60),
+
+  new Num(100, 500, 90),
+  new Num(100, 500, 90),
+  new Num(100, 500, 90),
+  new Num(100, 500, 90),
+
+  new RedVar(100, 600),
+  new RedVar(100, 600),
+  new RedVar(100, 600),
+  new RedVar(100, 600),
+
+  new FwdBy(300, 100),
+  new TurnBy(300, 350),
+  new Repeat(300, 600),
+  new IncreaseRedBy(300, 850),
+  turtle
+];
+
+document.body.onkeydown = async e => {
+  if (e.key !== 'Shift') {
+    return;
+  }
+  for (let idx = world.objects.length - 1; idx >= 0; idx--) {
+    const obj = world.objects[idx];
+    if (obj.containsPoint(mouse.x, mouse.y) &&
+        obj instanceof Cmd &&
+        obj.ready()) {
+      await obj.exec();
+      return;
+    }
+  }
+};
+
+    </script>
+  </body>
+</html>
