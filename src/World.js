@@ -91,19 +91,23 @@ class World {
       obj.drawTopLayer(ctxt, options);
     }
 
-    ctxt.font = '12pt Avenir';
     const textDampingFactor = 0.45;
     ctxt.globalAlpha = Math.pow(textDampingFactor, this.beams.length - 1);
+    ctxt.font = '12pt Avenir';
+    ctxt.fillStyle = 'yellow';
     for (let beam of this.beams) {
-      const label = `${beam.state.selector}(${beam.state.args.map(stringify).join(', ')})`;
-      const width = ctxt.measureText(label).width;
-      const height = 12;
-      const x = beam.state.sender.state.x - width / 2;
-      const y = beam.state.sender.state.y + height / 2;
-      ctxt.fillStyle = 'black';
-      ctxt.fillText(label, x + 2, y + 2);
-      ctxt.fillStyle = 'yellow';
-      ctxt.fillText(label, x, y);
+      fillTextCenteredWithShadow(
+          ctxt,
+          `${beam.state.selector}(${beam.state.args.map(stringify).join(', ')})`,
+          beam.state.sender.state.x,
+          beam.state.sender.state.y);
+      if (beam.state.currentResult !== undefined) {
+        fillTextCenteredWithShadow(
+            ctxt,
+            stringify(beam.state.currentResult),
+            beam.state.currentReceiver.state.x,
+            beam.state.currentReceiver.state.y);
+      }
       ctxt.globalAlpha /= textDampingFactor;
     }
     ctxt.globalAlpha = 1;

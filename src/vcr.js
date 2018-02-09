@@ -15,6 +15,14 @@ const vcr = {
     world.restore(world.history[this.t]);
   },
 
+  nextFrame() {
+    this.seek(this.t + 1);
+  },
+
+  prevFrame() {
+    this.seek(this.t - 1);
+  },
+
   turnOff() {
     if (!this.isOn) {
       return;
@@ -31,8 +39,7 @@ const vcr = {
     }
     ctxt.font = '14pt Monaco';
     ctxt.fillStyle = 'yellow';
-    const text = this.isOn ? `Replay ${this.t}/${world.history.length - 1}` : 'debug mode';
-    const width = ctxt.measureText(text).width;
-    ctxt.fillText(text, window.innerWidth - width - 20, 30);
+    const text = this.isOn ? `replay ${this.t}/${world.history.length - 1}` : 'debug mode';
+    fillTextRightAlignedWithShadow(ctxt, text, window.innerWidth - 20, 30);
   }
 };

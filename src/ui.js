@@ -47,6 +47,22 @@ document.body.addEventListener('mousemove', e => {
   }
 });
 
+/*
+document.body.addEventListener('wheel', e => {
+  e.preventDefault();
+  if (!vcr.isOn) {
+    return;
+  }
+  if (e.deltaX > 0) {
+    vcr.prevFrame();
+  } else if (e.deltaX === 0) {
+    // no-op
+  } else {
+    vcr.nextFrame();
+  }
+});
+*/
+
 document.body.addEventListener('keyup', e => {
   if (e.code === 'MetaLeft') {
     vcr.turnOff();

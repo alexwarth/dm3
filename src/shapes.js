@@ -14,11 +14,11 @@ class Shape {
   }
 
   destroy() {
-    const idx = objects.indexOf(this);
+    const idx = world.objects.indexOf(this);
     if (idx < 0) {
       throw new Error('cannot destroy an object twice!');
     }
-    objects.splice(idx, 1);
+    world.objects.splice(idx, 1);
   }
 
   saveState() {
@@ -136,11 +136,15 @@ class Shape {
     const responses = [];
     try {
       for (beam.state.currentReceiver of beam.state.receivers) {
-        const result = await (async () => {
+        await click();
+        beam.state.currentResult = await beam.state.currentReceiver[selector](...args);
+        responses.push({
+            receiver: beam.state.currentReceiver,
+            result: beam.state.currentResult});
+        if (beam.state.currentResult !== undefined) {
           await click();
-          return await beam.state.currentReceiver[selector](...args);
-        })();
-        responses.push({receiver: beam.state.currentReceiver, result});
+          beam.state.currentResult = undefined;
+        }
       }
       if (beam.state.receivers.length > 0) {
         beam.state.currentReceiver = null;
