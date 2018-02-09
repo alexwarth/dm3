@@ -36,9 +36,9 @@ class Alien extends Rectangle {
   }
 }
 
-class Bullet extends Rectangle {
+class Laser extends Rectangle {
   constructor(x, y) {
-    super(x, y, 'yellow', 5, 10);
+    super(x, y, 'yellow', 5, 15);
     this.state.vy = -4;
   }
 
@@ -48,7 +48,7 @@ class Bullet extends Rectangle {
       this.destroy();
     }
 
-    const responses = await this.to.all(Alien).up(this.state.height / 2 + 10).send('ping');
+    const responses = await this.to.all(Alien).up(20).send('ping');
     const aliens = responses.map(response => response.receiver);
     for (let alien of aliens) {
       alien.destroy();
@@ -72,9 +72,9 @@ class Spaceship extends Rectangle {
     this.state.y = canvas.height - this.state.height;
   }
 
-  fireBullet() {
+  fireLaser() {
     world.addObject(
-        new Bullet(this.state.x, this.state.y - this.state.height / 2));
+        new Laser(this.state.x, this.state.y - this.state.height / 2));
   }
 }
 
@@ -92,7 +92,7 @@ document.body.addEventListener('keydown', e => {
   if (e.key === 'Shift') {
     world.objects.
         filter(obj => obj instanceof Spaceship).
-        forEach(spaceship => spaceship.fireBullet());
+        forEach(spaceship => spaceship.fireLaser());
   }
 });
 

@@ -94,19 +94,20 @@ class World {
     const textDampingFactor = 0.45;
     ctxt.globalAlpha = Math.pow(textDampingFactor, this.beams.length - 1);
     ctxt.font = '12pt Avenir';
-    ctxt.fillStyle = 'yellow';
     for (let beam of this.beams) {
+      ctxt.fillStyle = 'yellow';
       fillTextCenteredWithShadow(
           ctxt,
           `${beam.state.selector}(${beam.state.args.map(stringify).join(', ')})`,
           beam.state.sender.state.x,
-          beam.state.sender.state.y);
+          beam.state.sender.bottomY + 20);
       if (beam.state.currentResult !== undefined) {
+        ctxt.fillStyle = 'white';
         fillTextCenteredWithShadow(
             ctxt,
             stringify(beam.state.currentResult),
             beam.state.currentReceiver.state.x,
-            beam.state.currentReceiver.state.y);
+            beam.state.currentReceiver.topY - 20);
       }
       ctxt.globalAlpha /= textDampingFactor;
     }

@@ -163,7 +163,7 @@ class Shape {
   }
 
   async ping() {
-    return 'pong';
+    return 'pong!';
   }
 }
 
