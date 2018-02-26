@@ -28,7 +28,7 @@ async function stepLoop() {
 stepLoop();
 
 document.body.addEventListener('keydown', e => {
-  if (e.code === 'MetaLeft') {
+  if (e.code === 'MetaLeft' && !vcr.isOn) {
     vcr.turnOn();
   }
 });
@@ -67,6 +67,10 @@ document.body.addEventListener('keyup', e => {
   if (e.code === 'MetaLeft') {
     vcr.turnOff();
   }
+});
+
+window.addEventListener('blur', e => {
+  vcr.turnOff();
 });
 
 document.body.addEventListener('mousedown', e => {
